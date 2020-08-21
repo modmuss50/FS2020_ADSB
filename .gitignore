@@ -1,8 +1,7 @@
 /*
 
-!CmakeLists.txt
-!main.cpp
 !readme.md
-!tcp_server.cpp
-!tcp_server.h
 !.gitignore
+!*.nim
+!nim.cfg
+!NimConnect.cpp

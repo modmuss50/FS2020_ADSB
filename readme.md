@@ -7,13 +7,11 @@ to a commonly used data stream. This allows you to use existing flight tracking 
 
 ### Building (Windows x64 only)
 
-Visual studio 2019 and MSFS 2020 SDK are required, I used CLion as my IDE.
+Visual studio 2019, MSFS 2020 SDK and x64 NIM are required.
 
-Copy simconnect.h from `C:\MSFS SDK\SimConnect SDK` into this dir.
+Copy SimConnect.h and SimConnect.dll from `C:\MSFS SDK\SimConnect SDK` into this dir.
 
-Run cmake with the following args: `-G "Visual Studio 16 2019" -A x64`
-
-Make sure to have SimConnect.dll next to the exe file
+Build and run with the following: `nim c -r main.nim`
 
 
 ## TODO 
@@ -25,6 +23,5 @@ If you want to help out with this project feel free to pick a todo from here or 
 - Map aircraft models to an existing IACO hex code so the aircraft model matches. (Currenly shows as an F35)
 - CI using github actions, upload to github releases
 - Better docs on how to use it
-- Rewrite in another language that isnt c++? C? / Rust? / D? / Go?
 - Make the socket client better, its not very thread safe and can leak memory.
 - Allow the default port (30003) to be set via a run arg or something
