@@ -9,6 +9,9 @@ proc shouldQuit(): cint {.importc.}
 proc getPlaneAltitude(): cint {.importc.}
 proc getPlaneLatitude(): cdouble {.importc.}
 proc getPlaneLongitude(): cdouble {.importc.}
+proc getPlaneVerticalSpeed(): cdouble {.importc.}
+proc getPlaneHeading(): cdouble {.importc.}
+proc getPlaneGroundSpeed(): cdouble {.importc.}
 
 import os
 import tcp
@@ -21,6 +24,9 @@ type
     altitude: int
     latitude: float64
     longitude: float64
+    verticalSpeed: float64
+    heading: float64
+    groundSpeed: float64
 
 proc processUpdate(plane : Plane): void =
     let sj = StringJoiner(delimiter: ",")
@@ -35,12 +41,12 @@ proc processUpdate(plane : Plane): void =
     sj.append("2019/12/10") # current time and date
     sj.append("19:10:46.320")
     sj.append("MSFS2020") # Callsign
-    sj.append(intToStr(plane.altitude)) # ltitude
-    sj.append("") # Ground speed
-    sj.append("") # Ground Heading
+    sj.append(intToStr(plane.altitude)) # altitude
+    sj.append(&"{plane.groundSpeed}") # Ground speed
+    sj.append(&"{plane.heading}") # Ground Heading
     sj.append(&"{plane.latitude}") # Lat
     sj.append(&"{plane.longitude}") # Lng
-    sj.append("") # Vertical Rate
+    sj.append(&"{plane.verticalSpeed}") # Vertical Rate
     sj.append("7000") # Squawk
     sj.append("1") # Squawk change flag, always set to 1
     sj.append("") # Squawk Emergency flag
@@ -57,7 +63,7 @@ when isMainModule:
 
         while shouldQuit() == 0 :
             callDispatch()
-            let plane = Plane(altitude: getPlaneAltitude(), latitude: getPlaneLatitude(), longitude: getPlaneLongitude())
+            let plane = Plane(altitude: getPlaneAltitude(), latitude: getPlaneLatitude(), longitude: getPlaneLongitude(), verticalSpeed: getPlaneVerticalSpeed(), heading: getPlaneHeading(), groundSpeed: getPlaneGroundSpeed())
             processUpdate(plane)
             sleep(1000)
 

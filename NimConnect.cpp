@@ -19,6 +19,9 @@ struct PlaneData {
     double altitude;
     double latitude;
     double longitude;
+    double verticalSpeed;
+    double heading;
+    double groundSpeed;
 };
 
 PlaneData* lastPlane;
@@ -91,6 +94,9 @@ extern "C" void subscribeToEvents() {
     hr = SimConnect_AddToDataDefinition(hSimConnect, DATA_DEFINE_PLANE_VALUES, "Plane Altitude", "feet");
     hr = SimConnect_AddToDataDefinition(hSimConnect, DATA_DEFINE_PLANE_VALUES, "Plane Latitude", "degrees");
     hr = SimConnect_AddToDataDefinition(hSimConnect, DATA_DEFINE_PLANE_VALUES, "Plane Longitude", "degrees");
+    hr = SimConnect_AddToDataDefinition(hSimConnect, DATA_DEFINE_PLANE_VALUES, "VERTICAL SPEED", "feet");
+    hr = SimConnect_AddToDataDefinition(hSimConnect, DATA_DEFINE_PLANE_VALUES, "PLANE HEADING DEGREES TRUE", "degrees");
+    hr = SimConnect_AddToDataDefinition(hSimConnect, DATA_DEFINE_PLANE_VALUES, "GPS GROUND SPEED", "knots");
 
     // Request an event when the simulation starts
     hr = SimConnect_SubscribeToSystemEvent(hSimConnect, SIM_UPDATE_EVENT, "1Sec");
@@ -123,4 +129,25 @@ extern "C" double getPlaneLongitude() {
     return 0;
   }
   return lastPlane->longitude;
+}
+
+extern "C" double getPlaneVerticalSpeed() {
+  if (lastPlane == NULL) {
+    return 0;
+  }
+  return lastPlane->verticalSpeed;
+}
+
+extern "C" double getPlaneHeading() {
+  if (lastPlane == NULL) {
+    return 0;
+  }
+  return lastPlane->heading;
+}
+
+extern "C" double getPlaneGroundSpeed() {
+  if (lastPlane == NULL) {
+    return 0;
+  }
+  return lastPlane->groundSpeed;
 }
