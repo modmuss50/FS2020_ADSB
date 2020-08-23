@@ -18,23 +18,34 @@ import tcp
 import joiner
 import strutils
 import strformat
+import parseopt
 
 type
-  Plane = object
-    altitude: int
-    latitude: float64
-    longitude: float64
-    verticalSpeed: float64
-    heading: float64
-    groundSpeed: float64
+    RunOptions = object
+        icao: string
+        squawk: string # I do want to pull this from the aircraft but have failed so far
 
-proc processUpdate(plane : Plane): void =
+type
+    Plane = object
+        altitude: int
+        latitude: float64
+        longitude: float64
+        verticalSpeed: float64
+        heading: float64
+        groundSpeed: float64
+
+proc processUpdate(plane : Plane, options: RunOptions): void =
     let sj = StringJoiner(delimiter: ",")
     sj.append("MSG")
     sj.append("3") # Message type
     sj.append("1")
     sj.append("1")
-    sj.append("43c813") # Hex
+
+    if options.icao == "":
+        sj.append("43c813") # Hex
+    else:
+        sj.append(options.icao) # Hex
+
     sj.append("1")
     sj.append("2019/12/10") # message reception time and date
     sj.append("19:10:46.320")
@@ -47,6 +58,13 @@ proc processUpdate(plane : Plane): void =
     sj.append(&"{plane.latitude}") # Lat
     sj.append(&"{plane.longitude}") # Lng
     sj.append(&"{plane.verticalSpeed}") # Vertical Rate
+
+    # Squawk
+    if options.squawk == "":
+        sj.append("")
+    else:
+        sj.append(options.squawk)
+
     sj.append("7000") # Squawk
     sj.append("1") # Squawk change flag, always set to 1
     sj.append("") # Squawk Emergency flag
@@ -55,7 +73,34 @@ proc processUpdate(plane : Plane): void =
 
     tcp.send(sj.value() & "\r\n")
 
+proc getOptions(): RunOptions =
+    var options = RunOptions()
+    var parser = initOptParser(commandLineParams())
+
+    while true:
+        parser.next()
+        case parser.kind
+        of cmdEnd: break
+        of cmdShortOption, cmdLongOption:
+            if parser.val == "":
+                echo "Unkown option: ", parser.key
+                quit 1
+            else:
+                if parser.key == "icao" or parser.key == "i":
+                    options.icao = parser.val
+                elif parser.key == "squawk" or parser.key == "s":
+                    options.squawk = parser.val
+                else:
+                    echo "Unkown option and value: ", parser.key, ", ", parser.val
+                    quit 1
+        of cmdArgument:
+            echo "Argument: ", parser.key
+
+    return options
+
 when isMainModule:
+    var options = getOptions()
+
     if connectToSim() == 1 :
         tcp.start()
         subscribeToEvents()
@@ -64,7 +109,7 @@ when isMainModule:
         while shouldQuit() == 0 :
             callDispatch()
             let plane = Plane(altitude: getPlaneAltitude(), latitude: getPlaneLatitude(), longitude: getPlaneLongitude(), verticalSpeed: getPlaneVerticalSpeed(), heading: getPlaneHeading(), groundSpeed: getPlaneGroundSpeed())
-            processUpdate(plane)
+            processUpdate(plane, options)
             sleep(1000)
 
         echo "Flight simulator quit"
