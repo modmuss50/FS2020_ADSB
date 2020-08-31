@@ -1,5 +1,5 @@
-{.compile: "NimConnect.cpp".}
-{.passL: "SimConnect.lib".}
+{.compile: "../simconnect/NimConnect.cpp".}
+{.passL: "simconnect/SimConnect.lib".}
 
 proc connectToSim(): cint {.importc.}
 proc subscribeToEvents(): void {.importc.}
@@ -15,63 +15,19 @@ proc getPlaneGroundSpeed(): cdouble {.importc.}
 
 import os
 import tcp
-import joiner
-import strutils
-import strformat
+import encoder_sbs
+import encoder_adsb
 import parseopt
+import plane
 
 type
     RunOptions = object
         icao: string
         squawk: string # I do want to pull this from the aircraft but have failed so far
 
-type
-    Plane = object
-        altitude: int
-        latitude: float64
-        longitude: float64
-        verticalSpeed: float64
-        heading: float64
-        groundSpeed: float64
-
-proc processUpdate(plane : Plane, options: RunOptions): void =
-    let sj = StringJoiner(delimiter: ",")
-    sj.append("MSG")
-    sj.append("3") # Message type
-    sj.append("1")
-    sj.append("1")
-
-    if options.icao == "":
-        sj.append("43c813") # Hex
-    else:
-        sj.append(options.icao) # Hex
-
-    sj.append("1")
-    sj.append("2019/12/10") # message reception time and date
-    sj.append("19:10:46.320")
-    sj.append("2019/12/10") # current time and date
-    sj.append("19:10:46.320")
-    sj.append("MSFS2020") # Callsign
-    sj.append(intToStr(plane.altitude)) # altitude
-    sj.append(&"{plane.groundSpeed}") # Ground speed
-    sj.append(&"{plane.heading}") # Ground Heading
-    sj.append(&"{plane.latitude}") # Lat
-    sj.append(&"{plane.longitude}") # Lng
-    sj.append(&"{plane.verticalSpeed}") # Vertical Rate
-
-    # Squawk
-    if options.squawk == "":
-        sj.append("")
-    else:
-        sj.append(options.squawk)
-
-    sj.append("7000") # Squawk
-    sj.append("1") # Squawk change flag, always set to 1
-    sj.append("") # Squawk Emergency flag
-    sj.append("") # Squawk Ident flag
-    sj.append("") # OnTheGround flag
-
-    tcp.send(sj.value() & "\r\n")
+proc processUpdate(plane : Plane): void =
+    tcp.send(encodeSBS(plane) & "\r\n")
+    echo encodeADSB(plane)
 
 proc getOptions(): RunOptions =
     var options = RunOptions()
@@ -108,8 +64,8 @@ when isMainModule:
 
         while shouldQuit() == 0 :
             callDispatch()
-            let plane = Plane(altitude: getPlaneAltitude(), latitude: getPlaneLatitude(), longitude: getPlaneLongitude(), verticalSpeed: getPlaneVerticalSpeed(), heading: getPlaneHeading(), groundSpeed: getPlaneGroundSpeed())
-            processUpdate(plane, options)
+            let plane = Plane(icao: options.icao, squawk: options.squawk, altitude: getPlaneAltitude(), latitude: getPlaneLatitude(), longitude: getPlaneLongitude(), verticalSpeed: getPlaneVerticalSpeed(), heading: getPlaneHeading(), groundSpeed: getPlaneGroundSpeed())
+            processUpdate(plane)
             sleep(1000)
 
         echo "Flight simulator quit"
